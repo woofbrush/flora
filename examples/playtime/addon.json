@@ -1,0 +1,9 @@
+{
+  "id": "playtime",
+  "name": "Playtime",
+  "version": "1.0.0",
+  "description": "Remembers how long each account has been connected, and answers a playtime command.",
+  "author": "flora",
+  "api": 1,
+  "main": "index.js"
+}
