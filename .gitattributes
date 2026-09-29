@@ -1,0 +1,23 @@
+# Normalise to LF in the repository whatever the contributor's platform, so a
+# Windows checkout does not rewrite every file it touches. GitHub renders and
+# diffs the stored LF form, which is what the repo should be judged on.
+* text=auto eol=lf
+
+# Binary. Listed explicitly because a font or an image that git decides is text
+# would be corrupted by a line-ending pass.
+*.png  binary
+*.ico  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ttf  binary
+*.otf  binary
+*.woff  binary
+*.woff2 binary
+
+# Windows scripts need CRLF if any are ever added.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Keep lockfile diffs out of review, but do not hide it from the repo.
+package-lock.json -diff linguist-generated

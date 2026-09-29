@@ -1,0 +1,11 @@
+{
+  "id": "responder",
+  "name": "Responder",
+  "version": "1.0.0",
+  "description": "Replies in chat when someone says one of your keywords. Off until you give it something to listen for.",
+  "author": "flora",
+  "api": 1,
+  "main": "index.js",
+  "builtin": true,
+  "defaultEnabled": true
+}

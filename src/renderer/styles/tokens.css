@@ -1,0 +1,257 @@
+/*
+ * flora design tokens.
+ *
+ * Every colour, radius and spacing step in the app resolves through a variable
+ * declared here. Views never hard-code a hex value: that is what lets the
+ * Settings > Appearance panel re-skin the whole app (accent, density, corner
+ * radius, backdrop) by writing a handful of properties onto <html>.
+ *
+ * The neutral ramp is the reference client's, transition by transition - same
+ * lightness steps, same relationships between a surface and its hover and
+ * pressed states. The cast is rotated cool: where that ramp leans warm (red
+ * above blue), this one leans blue (blue above red), so the near-blacks read
+ * as a cool slate rather than a warm plum and the violet accent sits on a
+ * ground of its own temperature instead of against it.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- neutral ramp ------------------------------------------------ */
+  --crust:    #11131c;   /* app background, deepest */
+  --mantle:   #161822;   /* navbar, chrome */
+  --base:     #1c1f2a;   /* cards, inputs, raised surfaces */
+  --surface0: #212430;   /* hover on a raised surface */
+  --surface1: #282c39;   /* pressed, and hairlines on cards */
+  --surface2: #353a49;   /* borders */
+  --overlay0: #5f6577;   /* muted icons, disabled text */
+  --overlay1: #858b9d;   /* secondary text */
+  --overlay2: #9fa6b9;   /* secondary text, brighter */
+  --subtext0: #c3cadb;
+  --subtext1: #d7deed;
+  --text:     #ecf1fc;   /* primary text: a cool near-white */
+
+  /* ---- hairlines ---------------------------------------------------- */
+  /*
+   * Every 1px edge in the app is one of these three, so the whole interface's
+   * line weight is one number to change rather than eighty.
+   *
+   * They are tints of the *text* colour rather than of a surface, and they are
+   * redefined per theme rather than shared, because an edge has to do opposite
+   * things on the two backgrounds: on the dark page it is a lit rim, so it is
+   * white at low alpha, and on the light page it is a shadow, so it is ink at
+   * low alpha. Before this they were literals, and every one of them was a
+   * white tint - which is why the light theme had no visible edges at all.
+   *
+   * The alphas are deliberately well above the "just barely there" range the
+   * app used to sit in. A near-white hairline at 4% on a near-black page is not
+   * a subtle edge, it is a broken one: the line is only a couple of levels off
+   * the background, so it reads as compression noise rather than as a drawn
+   * border. Around 12% is where it reads as a deliberate 1px rule at arm's
+   * length, which is where the reference client sits.
+   */
+  --line-faint:  rgba(214, 228, 255, 0.075);  /* separators inside a surface */
+  --line:        rgba(214, 228, 255, 0.12);   /* the edge of a control or card */
+  --line-strong: rgba(214, 228, 255, 0.17);   /* checked, hovered, or focused */
+
+  /* ---- accent (user-overridable) ----------------------------------- */
+  /* Two tones, because one cannot do both jobs well. `--accent` is the bright
+     one: it is read as a line or a glyph on a near-black page, where a lighter
+     violet carries further. `--accent-fill` is the deeper one, used wherever
+     the accent becomes a solid block with text on it - white on the bright
+     tone is around 2.9:1, which is not a button anybody should have to read. */
+  --accent:      #ba60ff;
+  --accent-fill: #a855f7;   /* solid fills: primary buttons, toggles */
+  --accent-hi:   #9333ea;   /* hover on a filled accent surface */
+  --accent-lo:   #c77dff;   /* pressed */
+  --accent-ink:  #ffffff;   /* text on a filled accent surface */
+  --accent-soft: rgba(186, 96, 255, 0.14);   /* tinted fills */
+  --accent-line: rgba(186, 96, 255, 0.34);   /* tinted borders */
+  --accent-glow: rgba(186, 96, 255, 0.30);   /* focus rings */
+
+  /* ---- semantics --------------------------------------------------- */
+  /* Conventional hues, so meaning survives any accent change. */
+  --green:   #3ecf8e;
+  --teal:    #56b6c2;
+  --blue:    #61afef;
+  --yellow:  #e5c07b;
+  --peach:   #d19a66;
+  --red:     #ff4444;
+  --pink:    #f472b6;
+
+  --ok:      var(--green);
+  --warn:    var(--yellow);
+  --danger:  var(--red);
+  --info:    var(--blue);
+
+  /* Filled variants, matching the lighter tones above but at a weight that
+     survives being used as a solid block rather than as text. */
+  --ok-fill:     #239a60;
+  --warn-fill:   #b8863b;
+  --danger-fill: #d63a3a;
+
+  --ok-soft:     rgba(62, 207, 142, 0.13);
+  --warn-soft:   rgba(229, 192, 123, 0.13);
+  --danger-soft: rgba(255, 68, 68, 0.13);
+  --info-soft:   rgba(97, 175, 239, 0.13);
+
+  /* Log levels, matching the reference's own code palette. */
+  --code-debug: #98c379;
+  --code-chat:  #c678dd;
+  --code-muted: #8b93a8;
+
+  /* ---- geometry (user-overridable) --------------------------------- */
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* Density: 1 is comfortable. Settings rewrites these three numbers. */
+  --pad-y: 10px;
+  --pad-x: 14px;
+  --row-h: 44px;
+
+  /* ---- chrome ------------------------------------------------------ */
+  --navbar-h: 80px;      /* navbar height, as in the reference */
+  --page-pad: 48px;      /* page gutter, as in the reference */
+  --veil-top: 0.55;      /* backdrop veil strength (layout.css) */
+  --veil-stop: 190px;
+
+  /* ---- type -------------------------------------------------------- */
+  --font: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Mono", ui-monospace, Consolas, monospace;
+
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 26px;
+  --fs-3xl: 34px;
+
+  --lh-tight: 1.25;
+  --lh-body: 1.55;
+
+  /* ---- elevation --------------------------------------------------- */
+  /* Low-spread shadows. The UI is dark, so depth is carried mostly by the
+     surface ramp and its borders; shadows only separate floating layers. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.34);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.48);
+  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(214, 228, 255, 0.05);
+
+  /* ---- motion ------------------------------------------------------ */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 110ms;
+  --dur: 170ms;
+  --dur-slow: 280ms;
+
+  --z-sticky: 20;
+  --z-drawer: 60;
+  --z-dropdown: 80;
+  --z-modal: 100;
+  --z-toast: 120;
+}
+
+/* ------------------------------------------------------------------ *
+ * Accent presets. Settings writes data-accent onto <html>; the values   *
+ * below are the shipped palette. A custom hex is applied inline instead *
+ * and these rules are skipped.                                          *
+ *                                                                       *
+ * Each preset pairs a bright tone for lines and glyphs with a deeper    *
+ * one for solid fills, and every fill is dark enough to carry white     *
+ * text at 4.5:1 or better.                                              *
+ * ------------------------------------------------------------------ */
+:root[data-accent="mauve"]  { --accent: #ba60ff; --accent-fill: #a855f7; --accent-hi: #9333ea; --accent-lo: #c77dff; }
+:root[data-accent="pink"]   { --accent: #f472b6; --accent-fill: #db2777; --accent-hi: #be185d; --accent-lo: #f9a8d4; }
+:root[data-accent="blue"]   { --accent: #61afef; --accent-fill: #2563eb; --accent-hi: #1d4ed8; --accent-lo: #93c5fd; }
+:root[data-accent="teal"]   { --accent: #56b6c2; --accent-fill: #0d9488; --accent-hi: #0f766e; --accent-lo: #5eead4; }
+:root[data-accent="green"]  { --accent: #3ecf8e; --accent-fill: #16a34a; --accent-hi: #15803d; --accent-lo: #86efac; }
+:root[data-accent="yellow"] { --accent: #e5c07b; --accent-fill: #ca8a04; --accent-hi: #a16207; --accent-lo: #fde047; }
+:root[data-accent="peach"]  { --accent: #d19a66; --accent-fill: #ea580c; --accent-hi: #c2410c; --accent-lo: #fdba74; }
+:root[data-accent="red"]    { --accent: #ff6b6b; --accent-fill: #dc2626; --accent-hi: #b91c1c; --accent-lo: #fca5a5; }
+:root[data-accent] { --accent-ink: #ffffff; }
+
+/* Recompute the alpha-derived tokens from whatever --accent ended up being.
+   `color-mix` keeps custom hexes working without any JS colour maths. */
+:root {
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 34%, transparent);
+  --accent-glow: color-mix(in srgb, var(--accent) 30%, transparent);
+  /* The light end of the logo's gradient. Derived rather than declared per
+     preset: the mark has to stay legible against the page, and a fixed light
+     tone would go muddy on the darker accents and vanish on the pale ones. */
+  --accent-lite: color-mix(in srgb, var(--accent) 46%, #ffffff);
+}
+
+/* Light theme. The ramp inverts: crust becomes the brightest surface and text
+   becomes the darkest ink. Only the neutral ramp and shadow strength change -
+   accent and semantics are shared, so both themes stay on-brand. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --crust:    #eaeef6;
+  --mantle:   #f3f5fa;
+  --base:     #ffffff;
+  --surface0: #eef1f7;
+  --surface1: #e0e5ef;
+  --surface2: #ccd4e2;
+  --overlay0: #9aa2b5;
+  --overlay1: #6e7689;
+  --overlay2: #5c6478;
+  --subtext0: #4a5163;
+  --subtext1: #3b4252;
+  --text:     #1b2030;
+
+  /* Edges invert with the ramp: on a light page a border is a shadow rather
+     than a rim, so the tint becomes ink. See the dark block for the alphas. */
+  --line-faint:  rgba(27, 32, 48, 0.10);
+  --line:        rgba(27, 32, 48, 0.15);
+  --line-strong: rgba(27, 32, 48, 0.22);
+
+  --accent:      #7c3aed;
+  --accent-fill: #7c3aed;
+  --accent-hi:   #6d28d9;
+  --accent-lo:   #8b5cf6;
+  --accent-ink:  #ffffff;
+
+  --ok-soft:     rgba(35, 154, 96, 0.13);
+  --warn-soft:   rgba(184, 134, 59, 0.15);
+  --danger-soft: rgba(214, 58, 58, 0.11);
+  --info-soft:   rgba(37, 99, 235, 0.11);
+
+  --green:  #14784a;
+  --yellow: #92610f;
+  --red:    #c62f2f;
+  --blue:   #1d4ed8;
+  --teal:   #1f6f79;
+  --peach:  #9a5a24;
+  --pink:   #be185d;
+
+  --code-debug: #3f7a2c;
+  --code-chat:  #8b3fbb;
+  --code-muted: #6e7689;
+
+  --shadow-sm: 0 1px 2px rgba(27, 32, 48, 0.09);
+  --shadow-md: 0 4px 14px rgba(27, 32, 48, 0.12);
+  --shadow-lg: 0 14px 40px rgba(27, 32, 48, 0.16);
+  --shadow-pop: 0 18px 48px rgba(27, 32, 48, 0.20), 0 0 0 1px rgba(27, 32, 48, 0.06);
+}
+
+/* Corner rounding, rewritten by Settings. */
+:root[data-radius="square"] { --r-xs: 2px; --r-sm: 3px; --r-md: 4px; --r-lg: 6px; --r-xl: 8px; }
+:root[data-radius="soft"]   { --r-xs: 6px; --r-sm: 9px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px; }
+:root[data-radius="round"]  { --r-xs: 10px; --r-sm: 14px; --r-md: 18px; --r-lg: 24px; --r-xl: 32px; }
+
+/* Density, rewritten by Settings. */
+:root[data-density="compact"]     { --pad-y: 6px;  --pad-x: 10px; --row-h: 36px; --fs-md: 13px; }
+:root[data-density="comfortable"] { --pad-y: 10px; --pad-x: 14px; --row-h: 44px; --fs-md: 14px; }
+:root[data-density="spacious"]    { --pad-y: 14px; --pad-x: 18px; --row-h: 54px; --fs-md: 15px; }
+
+/* Motion is opt-out, not opt-in - the OS setting is respected by default. */
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; }
+}

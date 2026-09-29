@@ -1,0 +1,547 @@
+/*
+ * App shell.
+ *
+ *   ┌──────────────────────────────────────────────────┐
+ *   │  ▣ flora    Home  Accounts  Bots   …    ⌕ ⚙ ◉ _ □ ✕ │  navbar, 80px, overlays
+ *   ├──────────────────────────────────────────────────┤
+ *   │                                                  │
+ *   │   page title                    search           │
+ *   │   ─────────────────────────────────────────      │
+ *   │   SECTION                                        │
+ *   │   ┌────────────────────────────────────────┐     │
+ *   │   └────────────────────────────────────────┘     │
+ *   │                                                  │  scrolls
+ *   └──────────────────────────────────────────────────┘
+ *
+ * The navbar is an overlay rather than a row: the backdrop runs unbroken to the
+ * top edge of the window, and the content column is inset beneath it. That is
+ * what lets the art show behind the bar the way the reference client does.
+ */
+
+#app {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--crust);
+}
+
+/* ---------------- stage (animated backdrop) ---------------- */
+
+.stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.stage__art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Fades up once the first frame is painted, so the app never opens on a
+     flash of empty canvas. */
+  opacity: 0;
+  transition: opacity 520ms var(--ease-out);
+}
+#app[data-ready="true"] .stage__art { opacity: 1; }
+
+/*
+ * Vignette. The art is brightest in the upper-right and falls away into the
+ * corners, which is where the eye should not be. Two stacked ellipses rather
+ * than one: a single radial gradient darkens evenly in every direction, which
+ * reads as a lens rather than as light coming from somewhere.
+ */
+.stage__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 62% 48% at 80% 42%, transparent 0%, rgba(0, 0, 0, 0.42) 62%, rgba(0, 0, 0, 0.72) 100%),
+    radial-gradient(ellipse 120% 70% at 12% 96%, rgba(0, 0, 0, 0.34), transparent 62%);
+}
+
+/*
+ * Veil. Covers the art below the top of the window so the page reads on a
+ * solid surface, while leaving a band of colour behind the navbar. The
+ * dashboard asks for less of it - the art is that page's own background.
+ */
+.stage__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, calc(var(--veil-top) * 0.5)) 0px,
+    var(--crust) var(--veil-stop),
+    var(--crust) 100%
+  );
+  transition: opacity var(--dur-slow) var(--ease);
+}
+#app { --veil-top: 0.55; --veil-stop: 190px; }
+#app[data-art="full"] { --veil-top: 0.30; --veil-stop: 300px; }
+
+/* Backdrop switched off in Settings: the canvas goes entirely, rather than
+   sitting there painting a still frame nothing can see. */
+:root[data-backdrop="none"] .stage { display: none; }
+
+/* ---------------- navbar ---------------- */
+
+.navbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  height: var(--navbar-h);
+  padding: 0 12px 0 40px;
+  /* Transparent at the top of a page so the art shows through, frosted once
+     the content scrolls beneath it. Both are driven by `data-scrolled`. */
+  background: transparent;
+  transition: background var(--dur) var(--ease), backdrop-filter var(--dur) var(--ease);
+}
+
+#app[data-scrolled="true"] .navbar {
+  background: rgba(17, 19, 28, 0.72);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+:root[data-theme="light"] #app[data-scrolled="true"] .navbar {
+  background: rgba(243, 245, 250, 0.78);
+}
+
+/* Entrance: the bar drops in and fades, the way the reference's does.
+ *
+ * `backwards`, not `both`. The two keyframes end on exactly the element's own
+ * resting style, so filling forwards buys nothing visually - but it does buy
+ * something expensive: a forwards fill leaves the animation in the effect
+ * stack for good, so the computed transform stays `matrix(1, 0, 0, 1, 0, 0)`
+ * rather than `none`, the bar keeps its own composited layer forever, and
+ * Chromium stops giving the text inside it subpixel antialiasing. That is the
+ * difference between crisp and slightly-chewed text on a 1x display. */
+@keyframes navbar-in {
+  from { opacity: 0; transform: translateY(calc(var(--navbar-h) * -1)); }
+  to   { opacity: 1; transform: none; }
+}
+.navbar { animation: navbar-in 460ms var(--ease-out) backwards; }
+
+.navbar__left {
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.navbar__center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: none;
+}
+
+.navbar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* The brand lockup. Collapses to the bare mark once the window is too narrow
+   for the wordmark and the nav links need the room. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: var(--text);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+.brand__mark {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: block;
+  /* No plate behind the mark and no border-radius to go with one: the mark is
+     transparent, so a box-shadow here would draw the shadow of a rectangle
+     around a shape that is not a rectangle. A drop-shadow filter follows the
+     alpha instead, which is the only kind of shadow this artwork can take. */
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.38));
+  transition: transform var(--dur) var(--ease-out);
+}
+.brand:hover .brand__mark { transform: scale(1.04); }
+.brand:active .brand__mark { transform: scale(0.98); }
+
+.brand__word {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Nav links. The active one is a filled pill with a hairline border, exactly
+   as the reference does it - the border is what stops the pill from reading as
+   a hover state that got stuck. */
+.navitem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 17px;
+  color: var(--overlay1);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.navitem:hover {
+  color: var(--text);
+  background: rgba(214, 228, 255, 0.10);
+}
+
+.navitem[aria-current="page"] {
+  color: var(--text);
+  font-weight: 500;
+  background: rgba(214, 228, 255, 0.047);
+  border-color: rgba(214, 228, 255, 0.047);
+}
+
+.navitem__badge {
+  margin-left: 8px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--overlay2);
+  background: var(--surface0);
+  border-radius: var(--r-pill);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.navitem[aria-current="page"] .navitem__badge { color: var(--text); background: var(--surface1); }
+.navitem__badge[data-tone="ok"]     { color: var(--ok);     background: var(--ok-soft); }
+.navitem__badge[data-tone="accent"] { color: var(--accent); background: var(--accent-soft); }
+
+/* Icon buttons on the right of the bar. */
+.navbtn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  color: var(--overlay1);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.navbtn:hover { color: var(--text); background: rgba(214, 228, 255, 0.10); }
+.navbtn:active { background: rgba(214, 228, 255, 0.15); }
+.navbtn .icon { width: 21px; height: 21px; }
+
+/* Backend state, in the slot the reference gives the account chip. */
+.statuschip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+/* The mark, inlined so its gradient can read var(--accent). `.illus` gives it
+   a box; these rules give it the right one. */
+.statuschip__mark {
+  width: 30px;
+  height: 30px;
+  transition: transform var(--dur) var(--ease-out);
+}
+.statuschip:hover .statuschip__mark { transform: scale(1.05); }
+
+/* When the chip carries a whitelisted player's face instead of the mark, the
+   head is the whole tile. It needs its own radius: `.mchead`'s is sized for a
+   face sitting in a list row, and at 30px in a 36px slot it reads as a square
+   that failed to load rather than as a deliberate tile. */
+.statuschip__mark .mchead {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.statuschip__dot {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--overlay0);
+  /* Ringed in the page colour so the dot reads as sitting on the tile rather
+     than floating over it. */
+  box-shadow: 0 0 0 2px var(--crust);
+  transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.statuschip[data-state="ok"] .statuschip__dot { background: var(--ok); }
+.statuschip[data-state="busy"] .statuschip__dot {
+  background: var(--warn);
+  animation: pulse 1.4s var(--ease) infinite;
+}
+.statuschip[data-state="bad"] .statuschip__dot { background: var(--danger); }
+#app[data-scrolled="true"] .statuschip__dot { box-shadow: 0 0 0 2px #171a24; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/*
+ * Window controls.
+ *
+ * Geometry taken from the reference: three 36px ghost buttons, eight apart,
+ * each a transparent square that fills with a ten per cent white overlay on
+ * hover and a little more on press. Close is not special-cased - the reference
+ * gives it the same treatment as the other two, and a red hover that appears
+ * nowhere else in the app reads as a warning rather than as a button.
+ *
+ * The set is `minus` / `maximize-01` / `x-close`. The middle one matters: a
+ * filled square is the Windows convention but not the reference's, and next to
+ * the other two it is visibly a different icon family.
+ */
+.wincontrols {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+}
+
+.wincontrols button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--subtext0);
+  background: none;
+  border: 0;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.wincontrols button:hover { background: rgba(214, 228, 255, 0.10); color: var(--text); }
+.wincontrols button:active { background: rgba(214, 228, 255, 0.16); }
+.wincontrols .icon { width: 20px; height: 20px; stroke-width: 2; }
+
+/* ---------------- content ---------------- */
+
+.content {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  /* Inset beneath the overlay navbar. The art still shows through the gap,
+     because nothing here paints a background. */
+  padding-top: var(--navbar-h);
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* `backwards` for the same reason the navbar uses it: a forwards fill would
+     hold a transform on this element - and so a composited layer under every
+     page - for the life of the view, which costs the whole page its subpixel
+     text antialiasing. See the note on navbar-in. */
+  animation: view-in 320ms var(--ease-out) backwards;
+}
+
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.view__header {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 8px var(--page-pad) 20px;
+}
+
+.view__title { min-width: 0; flex: 1 1 auto; }
+
+.view__title h1 {
+  font-size: var(--fs-3xl);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.view__title p {
+  margin-top: 6px;
+  font-size: var(--fs-md);
+  color: var(--overlay1);
+}
+
+.view__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding-bottom: 3px;
+}
+
+.view__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 var(--page-pad) 40px;
+  scrollbar-gutter: stable;
+}
+.view__body--flush { padding: 0; }
+
+/* A back link above a page title, as on every reference sub-page. */
+.backlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+  padding: 4px 10px 4px 6px;
+  margin-left: -6px;
+  color: var(--overlay1);
+  background: none;
+  border: 0;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.backlink:hover { color: var(--text); background: rgba(214, 228, 255, 0.07); }
+.backlink .icon { width: 13px; height: 13px; }
+
+/* Sticky sub-toolbar inside a view body (filters, bulk actions).
+ *
+ * A column, not a row. Every view fills this with a search row and then a row
+ * of filter chips beneath it, and the two are meant to stack. As a row they sat
+ * side by side instead, which squeezed the chips into whatever width was left
+ * over after the search box and wrapped them in the middle of the bar - the
+ * chips ended up starting halfway across the page with a second line under
+ * them. `stretch` because a column would otherwise centre each child on its own
+ * width, which is right for buttons and wrong for a full-width row. */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 4px 0 14px;
+  background: linear-gradient(var(--crust) 62%, transparent);
+}
+
+/* Content width caps: keeps long form pages readable on a wide window. */
+.page { max-width: 1120px; }
+.page--narrow { max-width: 760px; }
+
+/* Section heading.
+ *
+ * The reference names a group of settings in sentence case at 13px medium in
+ * the secondary text colour - a quieter voice than the rows it introduces, but
+ * the same size class as the body. It is deliberately *not* the tracked-out
+ * 11px uppercase label a dashboard would use: at that treatment the heading
+ * competes with the row titles under it instead of receding behind them.
+ *
+ * The padding is the reference's `(16, 0, 8, 2)` - more room above than below,
+ * because the space belongs to the group, not to the label. A flex row so a
+ * group's own actions can sit at its right-hand end; the hint takes the slack,
+ * which is what pushes them there. */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 16px 0 8px 2px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--overlay1);
+}
+.section-title:first-child { padding-top: 4px; }
+.section-title__hint {
+  flex: 1 1 auto;
+  font-weight: 400;
+  color: var(--overlay0);
+}
+
+/* A nav item in a secondary pane rather than in the navbar.
+ *
+ * The reference's sidebar geometry: 33px tall against the navbar item's 36,
+ * 14px label against 16, an 18px icon and 10px between it and the text. The
+ * navbar item is sized for the one row of chrome across the top of the window
+ * and reads as oversized when it is repeated eight times down a settings pane.
+ *
+ * `margin-bottom` rather than a gap on the parent, because these are buttons
+ * dropped into a plain div rather than flex children. */
+.navitem--pane {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  height: 33px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: var(--fs-md);
+}
+.navitem--pane + .navitem--pane { margin-top: 2px; }
+.navitem--pane .navitem__badge { margin-left: auto; }
+
+/* ---------------- responsive ---------------- */
+
+/* Past this width the wordmark is the first thing to go: the nav links are
+   worth more than the brand repeating itself. */
+@media (max-width: 1100px) {
+  .navbar { padding-left: 20px; }
+  .brand__word { display: none; }
+  .navitem { padding: 0 13px; font-size: var(--fs-md); }
+}
+
+@media (max-width: 900px) {
+  :root { --page-pad: 24px; }
+  .navbar__left { flex: none; }
+  .navbar__right { flex: 1 1 0; }
+  .navitem__badge { display: none; }
+}
+
+@media (max-width: 720px) {
+  :root { --page-pad: 16px; }
+  .wincontrols { display: none; }
+  .brand__mark { width: 32px; height: 32px; }
+  .view__title h1 { font-size: var(--fs-2xl); }
+}
+

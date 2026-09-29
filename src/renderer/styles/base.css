@@ -1,0 +1,492 @@
+/*
+ * Base layer: reset, typography, scrollbars, focus, form primitives.
+ * Loaded after tokens.css and before any component stylesheet.
+ */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+* { margin: 0; padding: 0; }
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;                /* the app shell owns all scrolling */
+}
+
+/*
+ * The page colour goes on `html` as well as `body`, and that is not redundant.
+ * `body` alone leaves the root transparent, and a transparent root makes the
+ * compositor treat the whole document as a layer it has to blend - which costs
+ * a full-page composite on every scroll and is what a stray band of the window
+ * colour at the edge of a fast flick comes from. Painting the root makes the
+ * page opaque from the first pixel. It is also the precondition the subpixel
+ * antialiasing described on `body` would need, if it were ever turned back on.
+ */
+html { background: var(--crust); }
+
+body {
+  background: var(--crust);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  font-weight: 400;
+  /*
+   * Grayscale antialiasing, explicitly, rather than the platform default.
+   *
+   * On Windows Chromium rasterises light-on-dark text with subpixel (LCD)
+   * antialiasing, and subpixel AA assumes the three stripes of a pixel can be
+   * lit independently. That is true when dark text sits on a light background,
+   * where the fringe lands in the gaps and reads as extra weight. Inverted -
+   * which is every page in this app - each stem instead picks up a red edge on
+   * one side and a blue edge on the other, and at 13-14px those fringes are
+   * wider than the stroke itself. It is the single most common reason a dark
+   * interface is described as looking pixelated, and it is not fixable by
+   * choosing a better font, a larger size, or a heavier weight.
+   *
+   * `antialiased` asks for plain coverage-based grayscale instead: the stem is
+   * drawn in shades of the text colour and nothing else. It is slightly softer
+   * on a light page and much cleaner on a dark one, and it is what the
+   * reference client renders.
+   *
+   * `text-rendering` is deliberately left alone. `optimizeLegibility` trades
+   * the system's hinting for kerning and ligatures, which at these sizes is a
+   * bad trade - it is what makes small text look chewed.
+   */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Poppins is a geometric face with a large x-height; at UI sizes the default
+     tracking is a little loose and the app reads wider than it is. */
+  letter-spacing: -0.006em;
+  user-select: none;               /* desktop app, not a web page */
+  cursor: default;
+}
+
+/* Text that is genuinely content - names, tokens, logs - stays selectable. */
+input,
+textarea,
+select,
+code,
+pre,
+.selectable,
+.console-line,
+.log-row { user-select: text; cursor: auto; }
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: var(--fs-2xl); }
+h2 { font-size: var(--fs-xl); }
+h3 { font-size: var(--fs-lg); }
+h4 { font-size: var(--fs-md); font-weight: 600; }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+a:hover { color: var(--accent-lo); text-decoration: underline; text-underline-offset: 2px; }
+
+code, kbd, pre, .mono { font-family: var(--mono); }
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--subtext1);
+  background: rgba(214, 228, 255, 0.07);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--surface1);
+  border: 4px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--r-pill);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--surface2); background-clip: content-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+::selection { background: var(--accent-soft); color: var(--text); }
+
+/* One focus treatment for the whole app, and only for keyboard users. */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* ---------------- icons ---------------- */
+
+/*
+ * Icons are inlined SVG bodies from assets/icons, all drawn on a 24-unit grid.
+ *
+ * Stroke weight is set here rather than left to the files, and that is what
+ * makes them crisp. An icon at 20px scales the 24-unit grid by five sixths, so
+ * an authored 2px stroke lands on 1.67 device pixels and the rasteriser has to
+ * smear it across two rows - the soft, greyish edge that reads as a
+ * low-resolution icon. `vector-effect: non-scaling-stroke` takes the stroke out
+ * of the scale transform, so every icon draws the same two clean device pixels
+ * whatever size its box is. Before this the set was rendered at four different
+ * weights, because a third of it is drawn at 13-18px rather than 20px.
+ *
+ * The dashboard is the exception. Its glyphs sit at 13-15px, where an absolute
+ * 2px stroke is a fifth of the icon's own width: the counters close up and the
+ * set stops reading as line art at all. There the stroke is left to scale with
+ * the box, which is the weight the artwork was drawn for.
+ *
+ * The three filled marks (curseforge, discord, modrinth) opt out in their own
+ * files with `stroke="none"`. They are solid shapes rather than line art, they
+ * are not drawn on the 24-unit grid, and an inherited stroke would fatten them
+ * and outline them in the current colour.
+ */
+.icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: inline-block;
+  vertical-align: middle;
+  color: inherit;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+}
+.icon > svg { display: block; width: 100%; height: 100%; }
+
+.icon > svg * {
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+[data-view="dashboard"] .icon > svg * {
+  stroke-width: 2;
+  vector-effect: none;
+}
+
+.icon-xs { width: 13px; height: 13px; }
+.icon-sm { width: 16px; height: 16px; }
+.icon-lg { width: 24px; height: 24px; }
+.icon-xl { width: 30px; height: 30px; }
+
+/*
+ * Illustrations.
+ *
+ * The same wrapper as `.icon`, for the files that are drawn pictures rather
+ * than line art. Nothing is set here that the artwork does not set itself: an
+ * inherited `fill` or `stroke` from the parent would be overridden by the
+ * paths' own presentation attributes anyway, but leaving them off keeps the
+ * file readable as what it is - a box the picture is fitted into.
+ */
+.illus {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  /* A default, for the same reason `.icon` has one: a `width: 100%` child
+     inside a shrink-to-fit box resolves to nothing, so the wrapper needs a size
+     of its own for callers that forget to give it one. */
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+}
+.illus > svg { display: block; width: 100%; height: 100%; }
+
+/* ---------------- form primitives ---------------- */
+
+/*
+ * Controls do not inherit the page font.
+ *
+ * The browser sheet gives a button, an input and a select the *system* font at
+ * a fixed size - Arial at 13.3px on Windows - because a form control is
+ * assumed to be a widget rather than a piece of the page. Every component that
+ * styles a button here sets a size and a weight and expects the family to come
+ * from the page, and one that forgets the `font-family` line renders in Arial
+ * while the label next to it is in Poppins. That is a subtle mismatch at a
+ * glance and an obvious one at arm's length: the fallback is narrower, with a
+ * different x-height, so a row of them reads as slightly wrong long before
+ * anyone works out why.
+ *
+ * Declared once, for every control, rather than as a `font-family: inherit` on
+ * each of the twenty component rules - which is a line nobody remembers to add
+ * to the twenty-first. A component that genuinely wants another face declares
+ * it and wins on specificity, which is how the monospaced inputs work.
+ */
+button,
+input,
+select,
+textarea,
+optgroup { font-family: inherit; }
+
+/* `.input` is the class form of the same control, for the cases where the tag
+   is not obvious at the call site - a search field built by a component, or a
+   custom element standing in for one.
+
+   The geometry is the reference's text field: 8px of vertical padding around a
+   14px line and 12px either side, an 8px radius, and a raised *opaque* surface
+   rather than a translucent tint. On a dark page a tint over the backdrop lets
+   the art and the canvas show through the control, which reads as a smudge
+   rather than as a field you can type into. */
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+.input,
+textarea,
+select {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  color: var(--text);
+  background: var(--base);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: var(--fs-md);
+  line-height: 1.4;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+textarea {
+  height: auto;
+  min-height: 96px;
+  padding: var(--pad-y) 12px;
+}
+
+input::placeholder,
+.input::placeholder,
+textarea::placeholder { color: var(--overlay1); }
+
+input:hover:not(:disabled),
+.input:hover:not(:disabled),
+textarea:hover:not(:disabled),
+select:hover:not(:disabled) { border-color: var(--line-strong); }
+
+/*
+ * Focus: the surface lifts a step and the hairline brightens.
+ * The reference has no glow ring around a focused field, and a 3px accent halo
+ * on the one control you are already looking at is louder than the state
+ * deserves. Keyboard focus still gets the accent, because there the ring is the
+ * only thing saying where you are - see `:focus-visible` below.
+ */
+input:focus,
+.input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--line-strong);
+  background: var(--surface0);
+  box-shadow: none;
+}
+
+input:focus-visible,
+.input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+input:disabled,
+.input:disabled,
+textarea:disabled,
+select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+input[type="search"]::-webkit-search-cancel-button { display: none; }
+
+/*
+ * Range slider.
+ *
+ * Chromium's default range is a system control - a sunken grey trough with a
+ * blue gradient knob - and it is the most out-of-place thing that can end up in
+ * a themed form. Nothing below is exotic: a 4px trough, a 16px knob, and the
+ * filled part of the trough painted by a gradient whose width comes from
+ * `--fill`, which the caller sets as a percentage. That indirection is needed
+ * because Chromium has no pseudo-element for the filled track the way Firefox
+ * has `::-moz-range-progress`.
+ *
+ * These are written with a `[type="range"]` on the selector rather than relying
+ * on the generic `input` rules above, which is also what lets them override the
+ * focus background those rules set - a slider has nothing to type into and must
+ * not light up like a text field.
+ */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 220px;
+  height: 16px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--r-pill);
+  background:
+    linear-gradient(var(--accent), var(--accent)) 0 0 / var(--fill, 0%) 100% no-repeat,
+    var(--surface1);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  /* Centres a 16px knob on a 4px trough: (4 - 16) / 2. */
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+input[type="range"]:hover { border: 0; background: none; }
+input[type="range"]:focus { border: 0; background: none; }
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.12); }
+input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.2); }
+input[type="range"]:focus-visible { outline: none; box-shadow: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+/*
+ * Colour swatch.
+ *
+ * The native control is a bevelled grey button that opens the system picker.
+ * Stripping the appearance leaves the swatch fill, which is the part worth
+ * keeping - it is the only part that shows the value.
+ */
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 40px;
+  height: 32px;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
+input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 4px; }
+
+input[type="color"]:hover { border-color: var(--line-strong); background: none; }
+input[type="color"]:focus { border-color: var(--line-strong); background: none; }
+input[type="color"]:focus-visible { outline: none; border-color: var(--accent); box-shadow: none; }
+
+textarea {
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  line-height: 1.62;
+  tab-size: 2;
+}
+
+select {
+  appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b93a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  cursor: pointer;
+}
+select option { background: var(--mantle); color: var(--text); }
+
+label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--subtext1);
+  margin-bottom: 6px;
+}
+
+/* Checkboxes, drawn rather than left to the platform: a default Windows
+   checkbox is the one control that instantly dates a dark interface. */
+input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 0;
+  background: var(--base);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+input[type="checkbox"]:hover { border-color: var(--accent-line); }
+input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2311131c' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+input[type="checkbox"]:indeterminate {
+  background: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2311131c' stroke-width='3.4' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* ---------------- utility ---------------- */
+
+.hidden { display: none !important; }
+
+/*
+ * `hidden` is only a presentation hint - the browser sheet gives it
+ * `display: none` at a specificity any component rule beats. Half the app
+ * toggles one (the nav badge with no count, a field's error line, the clear
+ * button on an empty search box), and every one of them sets `display`, so
+ * without this they all render as empty boxes when they are supposed to be
+ * gone. Restated once here rather than as a `[hidden]` guard on each of them,
+ * which is a rule nobody remembers to add to the next component.
+ */
+[hidden] { display: none !important; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row { display: flex; align-items: center; }
+.row-gap { display: flex; align-items: center; gap: 8px; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.spacer { flex: 1 1 auto; }
+.mono-sm { font-family: var(--mono); font-size: var(--fs-sm); }
+.muted { color: var(--overlay1); }
+.dim { color: var(--subtext0); }
+.center { display: flex; align-items: center; justify-content: center; }
+
+/* Drag regions for the frameless window. */
+.drag { -webkit-app-region: drag; }
+.no-drag,
+button,
+input,
+select,
+textarea,
+a { -webkit-app-region: no-drag; }

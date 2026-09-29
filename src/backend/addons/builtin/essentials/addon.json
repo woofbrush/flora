@@ -1,0 +1,11 @@
+{
+  "id": "essentials",
+  "name": "Essentials",
+  "version": "1.0.0",
+  "description": "Four small commands that make a bot useful to talk to: where it is, who is around, what time it is in game, and how far behind it is running.",
+  "author": "flora",
+  "api": 1,
+  "main": "index.js",
+  "builtin": true,
+  "defaultEnabled": true
+}

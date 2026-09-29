@@ -1,0 +1,122 @@
+/*
+ * Typefaces.
+ *
+ * Both families ship with the app and are served from flora://app, so there is
+ * no webfont request and no first-paint flash of a fallback face. The weights
+ * are declared individually rather than relying on the browser to synthesise
+ * them: a synthesised bold of Poppins looks noticeably wrong at the sizes the
+ * headings use.
+ *
+ * The same two families the design is drawn against - Poppins for everything
+ * the user reads, JetBrains Mono for anything that is a value: tokens, UUIDs,
+ * proxy addresses, log lines.
+ */
+
+/* Poppins - the UI face. */
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-Light.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: italic;
+  font-weight: 300;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-LightItalic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-Italic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-Medium.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: italic;
+  font-weight: 500;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-MediumItalic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-SemiBold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: italic;
+  font-weight: 600;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-SemiBoldItalic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-Bold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: italic;
+  font-weight: 700;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-BoldItalic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 800;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-ExtraBold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: italic;
+  font-weight: 800;
+  font-display: block;
+  src: url("../assets/fonts/Poppins/Poppins-ExtraBoldItalic.ttf") format("truetype");
+}
+
+/* JetBrains Mono - values, code and log output. A variable file covering the
+   whole weight range, so one declaration is enough. */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: block;
+  src: url("../assets/fonts/JetBrainsMono/JetBrainsMonoVariable.ttf") format("truetype-variations");
+}

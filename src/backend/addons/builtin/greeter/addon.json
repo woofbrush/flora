@@ -1,0 +1,11 @@
+{
+  "id": "greeter",
+  "name": "Greeter",
+  "version": "1.0.0",
+  "description": "Says hello when a player comes near the bot. Each player is greeted once per session, so it never turns into a loop of hellos.",
+  "author": "flora",
+  "api": 1,
+  "main": "index.js",
+  "builtin": true,
+  "defaultEnabled": true
+}

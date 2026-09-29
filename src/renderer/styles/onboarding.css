@@ -1,0 +1,569 @@
+/*
+ * First-run setup.
+ *
+ * A second shell, not a view: it takes the whole window, the way the reference
+ * client's onboarding does. The geometry is that shell's - a 3px progress rail,
+ * an 80px header, a body split down the middle, and a footer with the buttons
+ * pinned right.
+ *
+ * It carries its own backdrop canvas. The app's is behind this overlay and its
+ * veil covers everything below the navbar, so without a second one the very
+ * first screen a new user sees would be the only completely still one in flora.
+ */
+
+.ob {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: var(--crust);
+  animation: ob-in 420ms var(--ease-out);
+}
+
+@keyframes ob-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---------------- backdrop ---------------- */
+
+.ob__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ob__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * Veil. Heavier down the right, where the text is, and heavier toward the
+ * bottom, where the summary rows sit - so the art reads as a wash of colour
+ * behind the page rather than as something the copy has to fight.
+ */
+.ob__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 55% at 24% 46%, transparent 0%, rgba(17, 19, 28, 0.42) 70%),
+    linear-gradient(
+      180deg,
+      rgba(17, 19, 28, 0.42) 0%,
+      rgba(17, 19, 28, 0.62) 46%,
+      rgba(17, 19, 28, 0.80) 100%
+    );
+}
+
+/* Everything above the backdrop, in one stacking context. */
+.ob__fore {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ob__bar {
+  flex: none;
+  height: 3px;
+  background: rgba(214, 228, 255, 0.11);
+}
+
+.ob__bar-fill {
+  height: 100%;
+  background: var(--accent);
+  /* Width only: the fill advances one step at a time, and a transition is what
+     turns four jumps into a sense of progress. */
+  transition: width 420ms var(--ease-out);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+/* ---------------- header ---------------- */
+
+.ob__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--navbar-h);
+  padding: 0 24px;
+}
+
+.ob__brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--text);
+}
+
+.ob__brand b {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* Sized by the caller (`mark(30, ...)`) rather than here, so there is one
+   place that decides how big the mark is. */
+.ob__mark {
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.38));
+}
+
+/* ---------------- body ---------------- */
+
+/* Clipped, so a step sliding in from the right cannot widen the page and
+   produce a scrollbar for the length of the animation. */
+.ob__stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ob__page {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * The step entrance.
+ *
+ * Note the resting state: `.ob__page` is fully visible, and the keyframes are
+ * what take it away and bring it back. There is no `animation-fill-mode`, so a
+ * step that never animates - reduced motion, a dropped frame, an exception
+ * thrown in the same frame - is simply *there*, rather than stuck at `from` and
+ * invisible.
+ *
+ * The class is added a frame after insertion, not at build time. A CSS
+ * animation only starts on a style change against an element the browser has
+ * already rendered, and a node built detached and then inserted is a coin flip.
+ */
+.ob__page--in {
+  animation: ob-slide 380ms var(--ease-out);
+}
+
+@keyframes ob-slide {
+  from { opacity: 0; transform: translateX(var(--ob-from, 44px)); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Each block inside the step follows the frame in, a beat apart. `backwards`
+   holds the faded state through the delay, then gets out of the way. */
+.ob__page--in .ob__slot > * {
+  animation: ob-rise 420ms var(--ease-out) backwards;
+}
+.ob__page--in .ob__slot > *:nth-child(1) { animation-delay: 70ms; }
+.ob__page--in .ob__slot > *:nth-child(2) { animation-delay: 140ms; }
+.ob__page--in .ob__slot > *:nth-child(3) { animation-delay: 210ms; }
+.ob__page--in .ob__slot > *:nth-child(4) { animation-delay: 280ms; }
+
+@keyframes ob-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The illustration arrives with the step, a beat behind it. */
+.ob__page--in .ob__art {
+  animation: ob-art 620ms var(--ease-out) backwards;
+  animation-delay: 40ms;
+}
+
+@keyframes ob-art {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 0.9; transform: none; }
+}
+
+/* Motion off. The class comes from the appearance step; the media query covers
+   the OS preference, for anyone who never opens it. */
+.ob.is-still,
+.ob.is-still *,
+.ob__page.is-still,
+.ob__page.is-still * { animation: none !important; }
+
+.ob__page.is-still .ob__art { opacity: 0.9; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ob,
+  .ob * { animation: none !important; }
+}
+
+/* Illustration half. */
+.ob__art {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  padding: 56px;
+  color: var(--text);
+  opacity: 0.9;
+}
+
+.ob__art .illus { width: 200px; height: 200px; }
+
+/*
+ * The idle motion.
+ *
+ * The illustration keeps moving after it has arrived, because a large still
+ * picture on an otherwise animated screen reads as a screenshot that failed to
+ * load. It drifts rather than bounces - a few pixels over several seconds, so
+ * it registers as alive only when you look at it directly.
+ *
+ * This sits on the wrapper and the entrance sits on `.ob__art`, rather than
+ * both on one element: `animation` is a shorthand, so a second declaration
+ * would silently replace the first, and the step would stop arriving.
+ */
+.ob__page .ob__art .illus {
+  animation: ob-drift 7s var(--ease) infinite alternate;
+}
+
+@keyframes ob-drift {
+  from { transform: translate3d(0, 6px, 0) rotate(-1.1deg); }
+  to   { transform: translate3d(0, -8px, 0) rotate(1.1deg); }
+}
+
+/* Content half. */
+.ob__slot {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+  padding: 56px 96px 32px 40px;
+  overflow-y: auto;
+}
+
+.ob__heading h1 {
+  font-size: var(--fs-3xl);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  color: var(--text);
+  /* No text-shadow. A blurred dark halo behind light text on a dark ground
+     does nothing for contrast and a lot to soften the edges of the glyphs. */
+}
+
+.ob__heading p {
+  margin-top: 10px;
+  font-size: var(--fs-lg);
+  color: var(--overlay2);
+  line-height: 1.45;
+}
+
+.ob__lead {
+  font-size: var(--fs-md);
+  line-height: 1.62;
+  color: var(--subtext0);
+  max-width: 46ch;
+}
+
+.ob__form { display: grid; gap: 7px; max-width: 380px; }
+.ob__form .field__label { margin-bottom: 0; }
+/* Darker than the default input, because this one sits on the backdrop rather
+   than on a card. */
+.ob__form input { background: rgba(17, 19, 28, 0.62); }
+
+/* ---------------- appearance step ---------------- */
+
+.ob__rows { display: grid; gap: 8px; }
+
+.ob__row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 76px;
+  padding: 14px 20px;
+  background: rgba(17, 19, 28, 0.55);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  /* No backdrop-filter. Over a near-black ground it changes almost nothing,
+     and it forces the row into its own composited layer - which is one of the
+     ways text inside it stops being drawn by the system rasteriser. */
+}
+
+.ob__row-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 6px;
+  color: var(--overlay2);
+  background: rgba(214, 228, 255, 0.06);
+  border-radius: var(--r-sm);
+}
+
+.ob__row-icon .icon { width: 16px; height: 16px; }
+
+.ob__row-text { flex: 1 1 auto; min-width: 0; }
+.ob__row-text b { display: block; font-size: var(--fs-md); font-weight: 600; color: var(--text); }
+.ob__row-text span { display: block; margin-top: 2px; font-size: var(--fs-sm); color: var(--overlay2); }
+
+.ob__row-control { flex: none; display: flex; align-items: center; }
+
+.ob__swatches { display: flex; gap: 6px; }
+
+.ob__swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease-out);
+}
+
+.ob__swatch span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.ob__swatch:hover { transform: scale(1.12); }
+.ob__swatch.is-active { box-shadow: 0 0 0 2px var(--crust), 0 0 0 4px var(--accent); }
+
+.ob__segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(17, 19, 28, 0.66);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.ob__seg {
+  height: 26px;
+  padding: 0 13px;
+  color: var(--overlay2);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.ob__seg:hover { color: var(--text); }
+.ob__seg[aria-pressed="true"] { color: var(--text); background: var(--surface1); }
+
+/* ---------------- accounts step ---------------- */
+
+.ob__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.ob__accounts { min-height: 24px; }
+
+.ob__note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--overlay2);
+}
+.ob__note--ok { color: var(--ok); }
+.ob__note .icon { flex: none; }
+
+/* ---------------- control step ---------------- */
+
+/*
+ * Adding a name is the whole of this step, so the entry sits above the chips
+ * and the list grows downwards from it. The chips wrap rather than scroll: a
+ * whitelist long enough to need a scrollbar is a whitelist worth seeing whole.
+ */
+.ob__name-entry { display: flex; gap: 8px; }
+.ob__name-entry input { flex: 1 1 auto; min-width: 0; }
+.ob__name-entry .btn { flex: none; }
+
+.ob__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 30px;
+  align-items: center;
+}
+
+.ob__chips-empty { font-size: var(--fs-sm); color: var(--overlay1); }
+
+/* The lock follows the list, so it is shown - and explained - while inert
+   rather than hidden, which would move every row beneath it as names are
+   added. */
+.ob__row-control .toggle.is-disabled { opacity: 0.45; }
+
+/* ---------------- guide steps ----------------
+ *
+ * The walkthrough and the command list. Neither writes a setting, so both are
+ * built to be read rather than used: the same weight of surface as the rows in
+ * the appearance and control steps, so the flow does not visibly change
+ * character halfway through, and no controls at all, because a step whose
+ * content is instructions should not offer a way to get them wrong.
+ */
+
+/*
+ * Numbered, because the order is the instruction. A bulleted list of four
+ * things to do in sequence is a list people do out of sequence.
+ *
+ * The marker is drawn rather than set, so the digit can sit in an accent
+ * circle where a list marker cannot go.
+ */
+.ob__steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ob__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 13px 18px;
+  background: rgba(17, 19, 28, 0.55);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.ob__step-num {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  /* Nudged down to sit on the title's baseline rather than above it: the badge
+     is 22px against a 15px line, so aligning the boxes puts the digit high. */
+  margin-top: 1px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 50%;
+}
+
+.ob__step-text { flex: 1 1 auto; min-width: 0; }
+.ob__step-text b { display: block; font-size: var(--fs-md); font-weight: 600; color: var(--text); }
+.ob__step-text span { display: block; margin-top: 3px; font-size: var(--fs-sm); line-height: 1.55; color: var(--overlay2); }
+
+/* The command list.
+ *
+ * A striped reference rather than the cards the Help dialog uses, and not by
+ * accident: this list grows with every addon that adds a command, and a card
+ * per line costs 26px of padding each - ten of them is most of the window. As
+ * rows it fits at the size the window opens at, and reads as the table it is.
+ *
+ * It is deliberately a different shape from the Help dialog's version of the
+ * same list, so the two do not look like one list that has drifted.
+ */
+.ob__cmds { display: grid; gap: 2px; }
+
+.ob__cmd {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 6px 10px;
+  border-radius: var(--r-xs);
+}
+
+/* Zebra, so a long list can be read across without a rule under every row. */
+.ob__cmd:nth-child(odd) { background: rgba(17, 19, 28, 0.42); }
+
+.ob__cmd code {
+  flex: none;
+  min-width: 104px;
+  font-size: var(--fs-md);
+  color: var(--accent);
+}
+
+.ob__cmd > span:not(.chip) { flex: 1 1 auto; min-width: 0; font-size: var(--fs-sm); color: var(--overlay2); }
+
+/* The chips ("in flora", the addon's name) ride at the right-hand end, which the
+   summary's own `flex: 1 1 auto` is what pushes them to - no auto margin, or
+   the two would fight and leave a gap in the middle of the row. */
+.ob__cmd .chip { flex: none; height: 20px; font-size: var(--fs-xs); white-space: nowrap; }
+.ob__cmd .chip + .chip { margin-left: 6px; }
+
+/* ---------------- summary step ---------------- */
+
+.ob__summary { display: grid; gap: 8px; }
+
+.ob__summary-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: rgba(17, 19, 28, 0.55);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  backdrop-filter: blur(6px);
+}
+
+.ob__summary-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 6px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--r-sm);
+}
+
+.ob__summary-icon .icon { width: 16px; height: 16px; }
+.ob__summary-row b { display: block; font-size: var(--fs-lg); font-weight: 600; color: var(--text); }
+.ob__summary-row span { display: block; font-size: var(--fs-sm); color: var(--overlay2); }
+
+/* ---------------- footer ---------------- */
+
+.ob__footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 40px 32px;
+}
+
+.ob__footer .btn { width: 140px; justify-content: center; }
+.ob__footer .btn:first-child { width: 128px; }
+
+.ob__skip {
+  padding: 8px 4px;
+  color: var(--overlay1);
+  background: none;
+  border: 0;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+.ob__skip:hover { color: var(--text); }
+
+.ob__copyright {
+  position: absolute;
+  left: 24px;
+  bottom: 16px;
+  font-size: 11px;
+  color: var(--overlay0);
+}
+.ob__copyright a { color: inherit; }
+.ob__copyright a:hover { color: var(--overlay2); }
+
+/* ---------------- responsive ---------------- */
+
+@media (max-width: 1000px) {
+  .ob__art { display: none; }
+  .ob__slot { padding: 32px 40px 16px; }
+}
+
+@media (max-width: 640px) {
+  .ob__slot { padding: 24px 20px 12px; gap: 18px; }
+  .ob__footer { padding: 0 20px 24px; }
+  .ob__footer .btn,
+  .ob__footer .btn:first-child { width: auto; flex: 1 1 0; }
+}

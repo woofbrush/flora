@@ -1,0 +1,92 @@
+# electron-builder configuration.
+#
+# The Windows target matrix is deliberately two artefacts and no more: an
+# assisted installer for people who want flora in Program Files with a Start
+# menu entry, and a portable .exe for a USB stick. There is no MSI and no
+# auto-update feed - releases are published by hand on the Discord.
+
+appId: com.woofbrush.flora
+productName: flora
+copyright: © Woofbrush Design LLC
+
+directories:
+  output: dist
+  # Where electron-builder looks for icon.png, installer assets and the
+  # uninstaller artwork. scripts/make-icons.js writes icon.png here.
+  buildResources: build
+
+files:
+  - src/**/*
+  - package.json
+  # buildResources are installer assets and are not packed into the app, but the
+  # tray icon is different: src/main/tray.js loads it at runtime from a path
+  # relative to its own module, which inside the archive means
+  # app.asar/build/tray.png. Without this line the tray option in Settings is
+  # offered and then silently does nothing in an installed build.
+  - build/tray.png
+  # None of the following would be picked up by the includes above, but a
+  # later include would drag them in again. Listing them makes the intent
+  # explicit: tests, build tooling and the user's own data have no business
+  # inside the packaged app.
+  - '!tests/**'
+  - '!scripts/**'
+  - '!flora-data/**'
+  - '!dist/**'
+  - '!*.md'
+  - '!**/*.md'
+
+# The packaged package.json names the same entry point as the development one;
+# setting it here means a stray edit to main cannot break an installed build.
+extraMetadata:
+  main: src/main/index.js
+
+asar: true
+# No asarUnpack. The app has no native modules to keep outside the archive:
+# SQLite comes from `node:sqlite`, which is built into the Node runtime Electron
+# already ships, and every other runtime dependency (mineflayer, socks,
+# prismarine-auth) is pure JavaScript.
+
+win:
+  target:
+    - nsis
+    - portable
+  # 256px and up, seven sizes, from make-icons.js. This is a real .ico rather
+  # than the 512px PNG electron-builder would convert, because the conversion
+  # happens inside the same app-builder call that cannot run on this machine -
+  # see scripts/after-pack.cjs, which stamps the executable instead.
+  icon: build/icon.ico
+  # electron-builder's own stamping is off, for the reason described at length
+  # in scripts/after-pack.cjs: it downloads a bundle whose extraction fails on
+  # Windows without Developer Mode. That hook does the work instead. Turning
+  # this back on re-enables the broken path and the build stops here again.
+  signAndEditExecutable: false
+
+# Runs after the unpacked app is assembled and before the installers are built,
+# so the .exe that NSIS packages is already wearing the icon and version.
+afterPack: ./scripts/after-pack.cjs
+
+nsis:
+  # One-click installers give the user no choice about where the app lands, and
+  # this audience is exactly the audience that wants it somewhere specific.
+  oneClick: false
+  # Per-user by default so a standard account can install without an elevation
+  # prompt. NSIS still offers the all-users option on the directory page.
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: flora
+  # The name it is published under, which is not the name it installs under.
+  # The app and its Start menu entry stay "flora"; this is what the download is
+  # called on the website, and matches the version in package.json.
+  artifactName: flora-plus-${version}.${ext}
+  # Shown as a page in the assisted installer. Resolved from the project root
+  # because it is not in build/.
+  license: LICENSE
+  # Accounts live in %APPDATA%, not next to the .exe, so an uninstall that wiped
+  # them would destroy something the user cannot get back. Leaving this false
+  # means reinstalling finds every account, proxy and setting where it was.
+  deleteAppDataOnUninstall: false
+
+portable:
+  artifactName: flora-plus-${version}-portable.${ext}

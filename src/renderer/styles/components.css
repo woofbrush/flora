@@ -1,0 +1,1298 @@
+/*
+ * Component layer.
+ *
+ * Conventions used throughout:
+ *   .btn        - action control; variants via .btn--primary / --ghost / --danger
+ *   .card       - raised surface with an optional header/body/footer
+ *   .rowcard    - one setting: icon, title, description, control on the right
+ *   .field      - a label + control + hint stack
+ *   .chip       - small pill for filters, tags and counts
+ *   .badge      - status dot + label, used in tables and lists
+ *
+ * Geometry is the reference client's: 38px controls, 10-14px radii, hairline
+ * borders rather than heavy fills. On a dark page a border reads as an edge and
+ * a lighter fill reads as a raised surface; using fills for both is what makes
+ * a dark UI look muddy.
+ */
+
+/* ================================================================== *
+ * Buttons
+ *
+ * Taken from the reference's Button, size by size. Its sizes are padding-driven
+ * rather than height-driven - a button is `Gaps::new_symmetric(v, h)` around its
+ * line box - so the heights here are what that padding works out to at the
+ * matching type size, not numbers picked by eye:
+ *
+ *   medium   6px / 12px    radius 8    font 14      (the default)
+ *   small    4px /  8px    radius 6    font 12
+ *   large    8px / 32px    radius 10   font 18
+ *   icon     6px all round radius 8    32x32
+ *
+ * The default variant is the reference's Secondary: a raised opaque surface
+ * with a hairline border. `--primary` is its Primary, and only those two are
+ * filled - a page of buttons that are all lit up has no primary action left.
+ * ================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 6, not the reference's literal 4: its icons are drawn to a 24 box and sit
+     optically inside it, so 4 there reads like 6 here. */
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  color: var(--text);
+  background: var(--base);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+}
+.btn:hover:not(:disabled) { background: var(--surface0); border-color: rgba(214, 228, 255, 0.098); }
+.btn:active:not(:disabled) { background: var(--surface1); border-color: rgba(214, 228, 255, 0.149); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn .icon { flex: none; }
+
+/* Focus is a border in the accent, as in the reference - not an outer ring,
+   which on a filled button reads as a second button behind it. */
+.btn:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+.btn--primary {
+  color: var(--accent-ink);
+  background: var(--accent-fill);
+  border-color: transparent;
+}
+.btn--primary:hover:not(:disabled) { background: var(--accent-hi); border-color: transparent; }
+.btn--primary:active:not(:disabled) { background: var(--accent-lo); border-color: transparent; }
+
+.btn--ghost { background: transparent; border-color: transparent; color: var(--subtext0); }
+.btn--ghost:hover:not(:disabled) { background: rgba(214, 228, 255, 0.10); border-color: transparent; color: var(--text); }
+.btn--ghost:active:not(:disabled) { background: rgba(214, 228, 255, 0.15); border-color: transparent; }
+
+/* Kept as an alias: `.btn` is already the reference's Secondary, so an
+   `--outline` button is the same control with the border made explicit. */
+.btn--outline { background: transparent; color: var(--subtext1); border-color: rgba(214, 228, 255, 0.098); }
+.btn--outline:hover:not(:disabled) { background: var(--surface0); border-color: rgba(214, 228, 255, 0.149); color: var(--text); }
+
+/* The reference's Danger is a solid red button with near-white text on it, not
+   a red-tinted one. The base is a shade below pure `--red` because white on
+   #ff4444 is about 3.2:1; hover darkens and press lightens, which is the
+   direction the reference uses. */
+.btn--danger { color: var(--accent-ink); background: var(--danger-fill); border-color: transparent; }
+.btn--danger:hover:not(:disabled) { background: #c23434; border-color: transparent; }
+.btn--danger:active:not(:disabled) { background: #e04a4a; border-color: transparent; }
+
+.btn--ok { color: var(--accent-ink); background: var(--ok-fill); border-color: transparent; }
+.btn--ok:hover:not(:disabled) { background: #1d8451; border-color: transparent; }
+.btn--ok:active:not(:disabled) { background: #2bb06d; border-color: transparent; }
+
+.btn--sm { height: 28px; padding: 0 8px; font-size: var(--fs-xs); border-radius: 6px; }
+.btn--sm .icon { width: 15px; height: 15px; }
+.btn--lg { height: 42px; padding: 0 32px; font-size: var(--fs-lg); border-radius: 10px; }
+.btn--icon { width: 32px; padding: 0; }
+.btn--icon.btn--sm { width: 28px; }
+.btn--icon.btn--lg { width: 42px; }
+.btn--block { width: 100%; }
+
+/* Busy button: the label stays put and a spinner replaces the leading icon, so
+   the control does not change width mid-click. */
+.btn[data-busy="true"] { pointer-events: none; opacity: 0.75; }
+.btn[data-busy="true"] .icon { animation: spin 700ms linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-group { display: inline-flex; }
+.btn-group .btn { border-radius: 0; }
+.btn-group .btn + .btn { margin-left: -1px; }
+.btn-group .btn:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.btn-group .btn:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+
+/* ================================================================== *
+ * Surfaces
+ * ================================================================== */
+
+.card {
+  background: var(--base);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.card--pad { padding: 20px; }
+.card--tint { background: var(--surface0); }
+.card--glow {
+  background: linear-gradient(150deg, var(--accent-soft), var(--base) 62%);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px 14px;
+}
+.card__header h3 { font-size: var(--fs-lg); font-weight: 600; }
+.card__header p { font-size: var(--fs-sm); color: var(--overlay1); margin-top: 2px; }
+.card__header .grow { min-width: 0; }
+.card__body { padding: 20px; }
+.card__body--tight { padding: 0; }
+.card__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line-faint);
+}
+
+/* A card ends where its rows begin: the header carries the padding, the rows
+   carry the dividers. */
+.card__header + .card__body { padding-top: 0; }
+
+.grid { display: grid; gap: 12px; }
+.grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid--4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+/* A column of cards under a form.
+   Cards carry no margin of their own, so a pane that stacks several of them has
+   to space them itself. Doing it here rather than with an inline `marginTop` on
+   each card means the first one also gets its distance from the last setting
+   row above it, which is the gap that is easiest to leave out and the one that
+   looks worst: a card butted straight against a row reads as part of it. */
+.stack { margin-top: 16px; }
+.stack > * + * { margin-top: 12px; }
+
+/* A status dot in a row of text, as opposed to the one on the navbar chip,
+   which is positioned onto a tile. Only three tones are used and each means
+   what it means everywhere else in the app: green is working, yellow is
+   waiting on something outside flora, grey is switched off on purpose. */
+.presence__dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--overlay0);
+}
+.presence__dot--ok { background: var(--ok); }
+.presence__dot--warn { background: var(--warn); }
+.presence__dot--off { background: var(--overlay0); }
+
+@media (max-width: 980px) {
+  .grid--2, .grid--3 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ================================================================== *
+ * Setting rows
+ *
+ * One setting is one card: icon, title, description, control. Stacking them
+ * with a small gap rather than dividing one long card is what makes a settings
+ * page scannable - each row is a discrete thing you can look at on its own.
+ *
+ * The row is an opaque raised surface with *no* border, which is the reference's
+ * construction. A tinted, outlined row on a page that already has a backdrop
+ * behind it reads as a hole rather than a card; the step up in surface value is
+ * what makes it read as one.
+ * ================================================================== */
+
+.rowcard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 68px;
+  padding: 12px 16px;
+  background: var(--base);
+  border-radius: 12px;
+  transition: background var(--dur-fast) var(--ease);
+}
+.rowcard + .rowcard { margin-top: 8px; }
+.rowcard:hover { background: var(--surface0); }
+.rowcard--static:hover { background: var(--base); }
+
+.rowcard__icon {
+  flex: none;
+  color: var(--subtext0);
+}
+.rowcard:hover .rowcard__icon { color: var(--text); }
+
+.rowcard__text { flex: 1 1 auto; min-width: 0; }
+.rowcard__text > b {
+  display: block;
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  color: var(--text);
+}
+/* A help string can run to two sentences - `appearance.headService` does - and
+   it must wrap rather than push the control off the row. The `ch` cap keeps a
+   line at a comfortable reading length on a wide window instead of letting it
+   stretch to 1100px, which is what makes a long settings page tiring to read;
+   the control group is `flex: none` and so never gets squeezed by it.
+
+   Both rules are scoped to direct children. A title is allowed to be a node -
+   the Addons list puts a badge beside the name - and an unscoped descendant
+   selector would restyle that badge into a block of muted 12px text, which is
+   the sort of thing that is very hard to see in a diff and very obvious on
+   screen. */
+.rowcard__text > span {
+  display: block;
+  margin-top: 2px;
+  max-width: 68ch;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--overlay1);
+}
+
+.rowcard__control { flex: none; display: flex; align-items: center; gap: 12px; }
+
+/* The On/Off caption the reference puts beside a switch. */
+.rowcard__state {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--overlay2);
+  min-width: 20px;
+  text-align: right;
+}
+
+/* ================================================================== *
+ * Forms
+ * ================================================================== */
+
+.field { margin-bottom: 16px; }
+.field__hint { font-size: var(--fs-xs); color: var(--overlay0); margin-top: 6px; line-height: 1.5; }
+.field__error { font-size: var(--fs-xs); color: var(--red); margin-top: 6px; }
+
+.input-group { display: flex; gap: 8px; }
+.input-group > .grow { min-width: 0; }
+
+/* A search field with a leading glyph, as on every reference page header.
+   The field itself is an ordinary text input - the reference's search box is
+   the same control as every other field, just with an icon in front of the
+   text and a clear button behind it. Giving search its own pill-shaped,
+   borderless treatment is the thing that stops a page's search box from
+   looking like it belongs to the page. */
+.searchfield {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 256px;
+  /* Shrink to fit rather than overflow. The width above is the size a search
+     box wants in a page toolbar; dropped into a 210px settings pane instead, a
+     fixed 256 runs 46px past the pane and lands on top of the heading beside
+     it. `flex: none` keeps it from being stretched by a flex parent. */
+  max-width: 100%;
+  flex: none;
+}
+.searchfield .icon {
+  position: absolute;
+  left: 12px;
+  color: var(--overlay1);
+  pointer-events: none;
+  transition: color var(--dur-fast) var(--ease);
+}
+.searchfield input {
+  padding-left: 36px;
+  padding-right: 32px;
+}
+/* Clears the query, matching the reference's trailing X. Only there when there
+   is something to clear - which needs saying, because `display: grid` below
+   beats the `hidden` attribute's own `display: none` and left the X sitting on
+   every empty search box in the app. */
+.searchfield__clear {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--overlay1);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.searchfield__clear:hover { color: var(--text); background: rgba(214, 228, 255, 0.10); }
+.searchfield__clear .icon { position: static; width: 15px; height: 15px; }
+.searchfield:focus-within .icon { color: var(--accent); }
+
+@media (max-width: 860px) { .searchfield { width: 190px; } }
+
+/* The older switch row, kept for the views that still build one directly.
+   New code should use .rowcard. */
+.switchfield {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+.switchfield:last-child { border-bottom: 0; }
+.switchfield__text { flex: 1 1 auto; min-width: 0; }
+.switchfield__text b { display: block; font-size: var(--fs-lg); font-weight: 600; color: var(--text); }
+.switchfield__text span { display: block; font-size: var(--fs-sm); color: var(--overlay1); margin-top: 2px; }
+
+/*
+ * Toggle: a checkbox styled as a track + knob.
+ *
+ * The geometry is the reference's, to the pixel: a 40x22 track with a 3px
+ * inset and a 16px handle, so the handle travels 18px. The border is an inset
+ * box-shadow rather than a real border, because a 1px border on a border-box
+ * element would eat into the 3px inset and leave the handle 14px of room.
+ */
+.toggle {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 22px;
+}
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+.toggle span {
+  position: absolute;
+  inset: 0;
+  /* Off is the same raised surface a card sits on, not a hole in the row: the
+     track has to read as a control that exists in both states, otherwise the
+     switch appears to come into being the moment it is turned on. */
+  background: var(--base);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1px rgba(214, 228, 255, 0.047);
+  transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.toggle span::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  /* Expo-out, 180ms - the same curve and duration the reference uses, which is
+     what makes the knob snap at the end instead of gliding to a stop. */
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toggle input:checked + span { background: var(--accent-fill); box-shadow: inset 0 0 0 1px transparent; }
+.toggle input:checked + span::after { transform: translateX(18px); }
+.toggle input:focus-visible + span { box-shadow: inset 0 0 0 1px var(--accent); }
+.toggle input:checked:focus-visible + span { box-shadow: inset 0 0 0 1px var(--accent); }
+.toggle input:disabled + span { background: var(--crust); opacity: 0.6; cursor: not-allowed; }
+.toggle input:disabled + span::after { background: var(--overlay1); }
+
+/* ================================================================== *
+ * Chips, badges, tags
+ * ================================================================== */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--overlay2);
+  background: rgba(214, 228, 255, 0.055);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.chip:hover { background: rgba(214, 228, 255, 0.09); color: var(--text); }
+.chip[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+.chip--static { cursor: default; }
+.chip--static:hover { background: rgba(214, 228, 255, 0.055); color: var(--overlay2); }
+.chip .icon { width: 15px; height: 15px; }
+
+/*
+ * The count on a filter chip.
+ *
+ * Deliberately not the tab's `.tab__count`, which is what these used to share.
+ * A tab is 42px tall with a 14px label, so a 11.5px semibold count in the
+ * disabled grey reads as a separate, quieter number - which is what a tab
+ * wants. Dropped into a 30px chip beside a 13px label it does the opposite:
+ * the heavier weight wins against the word it belongs to and the darker grey
+ * pulls it back again, so a chip reads as a label and a stray mark rather than
+ * as "Selected, none". Here the count matches the label's weight and sits one
+ * step back in colour, which is enough to separate the two without either one
+ * looking like a mistake.
+ */
+.chip__count {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--overlay1);
+  font-variant-numeric: tabular-nums;
+}
+.chip:hover .chip__count { color: var(--overlay2); }
+
+/*
+ * A chip that can be taken off a list.
+ *
+ * The list chips in Settings are the only ones that are not a button in their
+ * own right - the whole chip is a label, and only the cross acts. So the chip
+ * loses the pointer and the hover lift the filter chips have, and the cross
+ * gets them instead, at the size of the 11px glyph inside it rather than the
+ * 30px row. The negative right margin pulls the cross back out to the chip's
+ * padding so the label stays optically centred.
+ */
+.chip--removable {
+  cursor: default;
+  padding-right: 5px;
+}
+.chip--removable:hover {
+  background: rgba(214, 228, 255, 0.055);
+  color: var(--overlay2);
+}
+.chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: -4px;
+  color: var(--overlay1);
+  background: none;
+  border: 0;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.chip__remove:hover {
+  color: var(--red);
+  background: rgba(255, 107, 107, 0.14);
+}
+.chip[aria-pressed="true"] .chip__count { color: var(--accent-lo); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--overlay2);
+  white-space: nowrap;
+}
+.badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.badge--ok      { color: var(--ok); }
+.badge--warn    { color: var(--warn); }
+.badge--danger  { color: var(--danger); }
+.badge--info    { color: var(--info); }
+.badge--idle    { color: var(--overlay0); }
+.badge--accent  { color: var(--accent); }
+.badge--live::before { animation: pulse 1.6s var(--ease) infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.82); }
+}
+
+/* A tag is the reference's "Bundled" pill: outlined, tinted, small. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 23px;
+  padding: 0 9px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-pill);
+}
+.tag .icon { width: 12px; height: 12px; }
+.tag--plain {
+  color: var(--overlay2);
+  background: rgba(214, 228, 255, 0.055);
+  border-color: transparent;
+}
+.tag--ok     { color: var(--ok);     background: var(--ok-soft);     border-color: color-mix(in srgb, var(--ok) 30%, transparent); }
+.tag--warn   { color: var(--warn);   background: var(--warn-soft);   border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
+.tag--danger { color: var(--danger); background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+
+/* ================================================================== *
+ * Tabs + segmented control
+ * ================================================================== */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 15px;
+  color: var(--overlay1);
+  background: none;
+  border: 0;
+  font-family: inherit;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+.tab:hover { color: var(--subtext1); }
+.tab[aria-selected="true"] { color: var(--text); }
+.tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: var(--r-pill);
+}
+.tab__count {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--overlay0);
+  font-variant-numeric: tabular-nums;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(214, 228, 255, 0.038);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 13px;
+  color: var(--overlay1);
+  background: none;
+  border: 0;
+  border-radius: var(--r-xs);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.segmented button:hover { color: var(--text); }
+.segmented button[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ================================================================== *
+ * Tables and lists
+ * ================================================================== */
+
+.table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--fs-md); }
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  color: var(--overlay0);
+  background: var(--crust);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.table thead th.sortable { cursor: pointer; user-select: none; }
+.table thead th.sortable:hover { color: var(--subtext0); }
+.table thead th .sortmark { margin-left: 4px; opacity: 0; font-size: 9px; }
+.table thead th[data-sort] .sortmark { opacity: 1; color: var(--accent); }
+
+.table tbody td {
+  padding: 0 14px;
+  height: var(--row-h);
+  border-bottom: 1px solid var(--line-faint);
+  vertical-align: middle;
+}
+.table tbody tr { transition: background var(--dur-fast) var(--ease); }
+.table tbody tr:hover { background: rgba(214, 228, 255, 0.028); }
+.table tbody tr[data-selected="true"] { background: var(--accent-soft); }
+.table tbody tr[data-selected="true"]:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table td.right, .table th.right { text-align: right; }
+.table td.center, .table th.center { text-align: center; }
+
+.table--fixed { table-layout: fixed; }
+.table .col-actions { width: 1%; white-space: nowrap; }
+
+/* Row cell composites. */
+.cell-actions { display: flex; align-items: center; gap: 4px; justify-content: flex-end; opacity: 0; transition: opacity var(--dur-fast) var(--ease); }
+tr:hover .cell-actions,
+tr:focus-within .cell-actions,
+.cell-actions[data-pinned="true"] { opacity: 1; }
+
+/* ================================================================== *
+ * Checkbox + avatar
+ * ================================================================== */
+
+.checkbox {
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  margin: 0;
+  background: rgba(214, 228, 255, 0.055);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  cursor: pointer;
+  position: relative;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.checkbox:hover { border-color: var(--accent); }
+.checkbox:checked { background: var(--accent-fill); border-color: var(--accent-fill); }
+.checkbox:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1.5px;
+  width: 4px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(42deg);
+}
+.checkbox:indeterminate { background: var(--accent-fill); border-color: var(--accent-fill); }
+.checkbox:indeterminate::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 7px;
+  width: 8px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+
+/* Minecraft head. Drawn to a canvas from the cached skin, or served as a PNG
+   when the account has no skin of its own; both land on `.mchead` and are
+   sampled with pixelated scaling so the 8x8 face stays crisp instead of going
+   soft. */
+.mchead {
+  flex: none;
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--surface0);
+  image-rendering: pixelated;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+/* The hat layer itself is drawn by the renderer - it is a second blit, not a
+   style - so `shaded` only has the shadow left to add here. */
+:root[data-head-style="shaded"] .mchead {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.42));
+}
+.mchead--sm { width: 22px; height: 22px; }
+.mchead--md { width: 32px; height: 32px; border-radius: var(--r-sm); }
+.mchead--lg { width: 48px; height: 48px; border-radius: var(--r-md); }
+.mchead--xl { width: 76px; height: 76px; border-radius: var(--r-lg); }
+
+.account-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.account-cell__text { min-width: 0; }
+.account-cell__text b {
+  display: block;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-cell__text span {
+  display: block;
+  font-size: var(--fs-sm);
+  color: var(--overlay1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ================================================================== *
+ * Menus and dropdown panels
+ *
+ * One construction serves the context menu, the select popup and the account
+ * switcher, because the reference draws them the same way: a panel one surface
+ * step above the page, a 1px hairline, a 12px radius and 6px of inset, with
+ * rows that are 5px/8px of padding around a 12px label inside a 6px radius.
+ * The row is short and tight on purpose - a menu is scanned, not read.
+ * ================================================================== */
+
+.menu {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  min-width: 200px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--surface0);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+  animation: pop var(--dur) var(--ease-out);
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-5px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+.menu__list { display: flex; flex-direction: column; gap: 4px; }
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  color: var(--overlay2);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.menu__item:hover:not(:disabled) { background: var(--surface1); color: var(--text); }
+.menu__item:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--accent); }
+.menu__item:disabled { opacity: 0.5; cursor: not-allowed; }
+.menu__item .icon { color: currentColor; flex: none; width: 18px; height: 18px; opacity: 0.85; }
+.menu__item:hover .icon { opacity: 1; }
+.menu__item kbd { margin-left: auto; }
+.menu__item--danger { color: var(--red); }
+.menu__item--danger:hover { background: var(--danger-soft); color: var(--red); }
+.menu__item--danger .icon { color: var(--red); }
+.menu__item[aria-current="true"] { color: var(--text); }
+.menu__item[aria-current="true"] .icon { color: var(--accent); opacity: 1; }
+
+.menu__sep { height: 1px; margin: 4px 2px; background: rgba(214, 228, 255, 0.062); }
+.menu__label {
+  padding: 8px 8px 4px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--overlay1);
+}
+
+/* ---------------- select / dropdown ---------------- */
+
+/*
+ * The trigger is the reference's Dropdown: 24px tall, 8px of side padding, a
+ * 4px gap, a 6px radius and a 12px label, filled with the same faint overlay a
+ * ghost button gets rather than with a field surface. It is a menu that opens,
+ * not a field you type into, and it should not look like one.
+ */
+.select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 96px;
+  height: 28px;
+  padding: 0 8px;
+  color: var(--text);
+  background: rgba(214, 228, 255, 0.047);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+.select:hover { background: rgba(214, 228, 255, 0.10); }
+.select:focus-visible { outline: none; border-color: var(--accent); }
+.select:disabled { opacity: 0.5; cursor: not-allowed; }
+.select[aria-expanded="true"] {
+  background: rgba(214, 228, 255, 0.10);
+  border-color: rgba(214, 228, 255, 0.10);
+}
+.select__text { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.select__caret { transition: transform var(--dur-fast) var(--ease); }
+.select[aria-expanded="true"] .select__caret { transform: rotate(180deg); }
+.select .icon { flex: none; width: 14px; height: 14px; color: var(--overlay1); }
+.select:hover .icon { color: var(--subtext0); }
+.select--wide { min-width: 160px; height: 32px; padding: 0 10px; font-size: var(--fs-sm); }
+
+/* In a settings row the dropdown is the control, so it sits against the right
+   edge with a width of its own rather than stretching to the row. One width for
+   every enum row, not one per option list: rows that each sized themselves to
+   their own longest word would put "Dark" and "Comfortable" at two different
+   left edges down the same column. */
+.rowcard .select { min-width: 168px; height: 32px; padding: 0 10px; font-size: var(--fs-sm); }
+
+/* ================================================================== *
+ * Modal / drawer / confirm
+ * ================================================================== */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(9, 7, 11, 0.66);
+  backdrop-filter: blur(5px);
+  animation: fade var(--dur) var(--ease);
+}
+:root[data-theme="light"] .scrim { background: rgba(43, 37, 51, 0.32); }
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 580px;
+  max-height: 100%;
+  /* A floating surface, one step above the page. The value is the token
+     rather than a literal: the plum this used to be was the old warm palette
+     and read as a different app behind a cool-slate page. */
+  background: var(--base);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: rise var(--dur-slow) var(--ease-out);
+}
+.modal--wide { max-width: 860px; }
+.modal--slim { max-width: 440px; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px) scale(0.988); }
+  to   { opacity: 1; transform: none; }
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 24px 16px;
+}
+.modal__header h2 { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -0.02em; }
+.modal__header p { font-size: var(--fs-sm); color: var(--overlay1); margin-top: 3px; }
+.modal__header .grow { min-width: 0; }
+
+.modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 24px 6px;
+}
+
+.modal__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 24px;
+  border-top: 1px solid var(--line-faint);
+}
+.modal__footer .spacer { flex: 1 1 auto; }
+
+/* ================================================================== *
+ * Toasts
+ * ================================================================== */
+
+.toasts {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 350px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 15px;
+  background: var(--surface0);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--overlay0);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toast-in var(--dur-slow) var(--ease-out);
+}
+.toast[data-leaving="true"] { animation: toast-out var(--dur) var(--ease) forwards; }
+.toast--ok      { border-left-color: var(--ok); }
+.toast--error   { border-left-color: var(--red); }
+.toast--warn    { border-left-color: var(--warn); }
+.toast--info    { border-left-color: var(--info); }
+
+.toast__icon { flex: none; margin-top: 1px; }
+.toast--ok    .toast__icon { color: var(--ok); }
+.toast--error .toast__icon { color: var(--red); }
+.toast--warn  .toast__icon { color: var(--warn); }
+.toast--info  .toast__icon { color: var(--info); }
+
+.toast__text { flex: 1 1 auto; min-width: 0; }
+.toast__text b { display: block; font-size: var(--fs-md); font-weight: 600; }
+.toast__text p { font-size: var(--fs-sm); color: var(--overlay1); margin-top: 2px; word-break: break-word; }
+
+.toast__close { flex: none; color: var(--overlay0); background: none; border: 0; cursor: pointer; padding: 2px; border-radius: var(--r-xs); }
+.toast__close:hover { color: var(--text); background: rgba(214, 228, 255, 0.07); }
+
+@keyframes toast-in  { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(24px); } }
+
+/* ================================================================== *
+ * Progress, meters, skeletons, empty states
+ * ================================================================== */
+
+.progress {
+  height: 6px;
+  background: rgba(214, 228, 255, 0.075);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.progress__bar {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.progress--thin { height: 3px; }
+.progress--ok .progress__bar { background: var(--ok); }
+.progress--danger .progress__bar { background: var(--red); }
+
+/* Indeterminate stripe for work with no known total. */
+.progress[data-indeterminate="true"] .progress__bar {
+  width: 32%;
+  animation: indeterminate 1.15s var(--ease) infinite;
+}
+@keyframes indeterminate {
+  0%   { margin-left: -32%; }
+  100% { margin-left: 100%; }
+}
+
+/* Stat card. The icon sits in its own tinted tile, which is what gives the
+   reference's stat rows their structure at a glance. */
+/* Stat card. The icon sits in its own tinted tile, which is what gives the
+   reference's stat rows their structure at a glance.
+ *
+ * No border. These sit in a row of four across the top of the dashboard, and
+ * four 1px outlines side by side read as a table drawn around the numbers
+ * rather than as four objects - the tint and the radius already say where each
+ * one ends. The accent variant used to add an outline as well; the tint alone
+ * is enough to pick it out of the row. */
+.stat {
+  padding: 18px 20px;
+  background: rgba(214, 228, 255, 0.022);
+  border-radius: var(--r-lg);
+  transition: background var(--dur) var(--ease);
+}
+.stat:hover { background: rgba(214, 228, 255, 0.035); }
+
+.stat__label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  color: var(--overlay2);
+}
+.stat__label .icon {
+  width: 16px;
+  height: 16px;
+  padding: 5px;
+  box-sizing: content-box;
+  color: var(--overlay1);
+  background: rgba(214, 228, 255, 0.055);
+  border-radius: var(--r-sm);
+}
+
+.stat__value {
+  font-size: var(--fs-3xl);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin-top: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.stat__meta { font-size: var(--fs-sm); color: var(--overlay1); margin-top: 4px; }
+.stat--accent { background: linear-gradient(150deg, var(--accent-soft), rgba(214, 228, 255, 0.022) 60%); }
+.stat--accent .stat__value { color: var(--text); }
+.stat--accent .stat__label .icon { color: var(--accent); background: var(--accent-soft); }
+.stat--ok .stat__value { color: var(--ok); }
+.stat--ok .stat__label .icon { color: var(--ok); background: var(--ok-soft); }
+.stat--danger .stat__value { color: var(--danger); }
+.stat--danger .stat__label .icon { color: var(--danger); background: var(--danger-soft); }
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(214, 228, 255, 0.045) 25%, rgba(214, 228, 255, 0.085) 37%, rgba(214, 228, 255, 0.045) 63%);
+  background-size: 400% 100%;
+  border-radius: var(--r-xs);
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 64px 24px;
+  text-align: center;
+}
+.empty__art {
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 10px;
+  color: var(--overlay0);
+  background: rgba(214, 228, 255, 0.038);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.empty__art .icon { width: 26px; height: 26px; }
+.empty h3 { font-size: var(--fs-xl); font-weight: 600; }
+.empty p { font-size: var(--fs-md); color: var(--overlay1); max-width: 400px; }
+.empty .btn { margin-top: 14px; }
+
+/* ================================================================== *
+ * Tooltip (CSS-only, driven by data-tip)
+ * ================================================================== */
+
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(3px);
+  padding: 6px 10px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  z-index: var(--z-dropdown);
+}
+[data-tip]:hover::after { opacity: 1; transform: translateX(-50%); }
+[data-tip-pos="right"]::after {
+  bottom: auto;
+  left: calc(100% + 9px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-3px);
+}
+[data-tip-pos="right"]:hover::after { transform: translateY(-50%); }
+
+/* ================================================================== *
+ * Console / log output
+ * ================================================================== */
+
+.console {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px;
+  background: var(--mantle);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  line-height: 1.66;
+}
+
+.console-line {
+  display: flex;
+  gap: 12px;
+  padding: 1px 0;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.console-line__time { flex: none; color: var(--overlay0); opacity: 0.75; }
+.console-line__text { flex: 1 1 auto; min-width: 0; }
+
+.console-line[data-kind="chat"]    .console-line__text { color: var(--text); }
+.console-line[data-kind="system"]  .console-line__text { color: var(--overlay2); }
+.console-line[data-kind="action"]  .console-line__text { color: var(--code-chat); font-style: italic; }
+.console-line[data-kind="error"]   .console-line__text { color: var(--red); }
+.console-line[data-kind="warn"]    .console-line__text { color: var(--warn); }
+.console-line[data-kind="success"] .console-line__text { color: var(--code-debug); }
+.console-line[data-kind="input"]   .console-line__text { color: var(--accent); }
+.console-line[data-kind="command"] .console-line__text { color: var(--accent); }
+.console-line[data-kind="info"]    .console-line__text { color: var(--info); }
+.console-line[data-kind="debug"]   .console-line__text { color: var(--code-muted); }
+
+.console-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line-faint);
+  background: rgba(214, 228, 255, 0.022);
+}
+.console-input input {
+  border: 0;
+  background: transparent;
+  padding: 6px 0;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+}
+.console-input input:focus { box-shadow: none; background: transparent; }
+.console-input .prefix { font-family: var(--mono); font-size: var(--fs-sm); color: var(--accent); flex: none; }
+
+/* ================================================================== *
+ * Misc
+ * ================================================================== */
+
+.divider { height: 1px; background: rgba(214, 228, 255, 0.062); margin: 20px 0; border: 0; }
+.divider--labelled {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: auto;
+  background: none;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--overlay0);
+}
+.divider--labelled::before,
+.divider--labelled::after { content: ""; flex: 1 1 auto; height: 1px; background: rgba(214, 228, 255, 0.062); }
+
+.callout {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  line-height: 1.58;
+  background: rgba(214, 228, 255, 0.028);
+  border: 1px solid var(--line);
+}
+.callout .icon { flex: none; margin-top: 1px; width: 18px; height: 18px; }
+.callout--info   { background: var(--info-soft);   border-color: color-mix(in srgb, var(--info) 26%, transparent); }
+.callout--info .icon { color: var(--info); }
+.callout--warn   { background: var(--warn-soft);   border-color: color-mix(in srgb, var(--warn) 26%, transparent); }
+.callout--warn .icon { color: var(--warn); }
+.callout--danger { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 26%, transparent); }
+.callout--danger .icon { color: var(--danger); }
+.callout--ok     { background: var(--ok-soft);     border-color: color-mix(in srgb, var(--ok) 26%, transparent); }
+.callout--ok .icon { color: var(--ok); }
+.callout--idle   { }
+.callout b { color: var(--text); font-weight: 600; }
+.callout code {
+  font-size: 12px;
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--r-xs);
+}
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 9px 18px; font-size: var(--fs-sm); }
+.kv dt { color: var(--overlay1); }
+.kv dd { color: var(--text); font-family: var(--mono); font-size: var(--fs-sm); word-break: break-all; }
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(214, 228, 255, 0.13);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 640ms linear infinite;
+  flex: none;
+}
+.spinner--lg { width: 28px; height: 28px; border-width: 2.5px; }
+
+.loading-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 52px;
+  color: var(--overlay1);
+  font-size: var(--fs-md);
+}
+
+/* ================================================================== *
+ * Menu scrim
+ *
+ * A transparent full-window layer under an open context menu. It exists so a
+ * click anywhere else closes the menu, and so a click on the row the menu was
+ * opened from does not also activate that row. No visual weight of its own -
+ * a menu should feel like it belongs to the thing it was opened from.
+ * ================================================================== */
+
+.menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-dropdown) - 1);
+}
+
+/* ================================================================== *
+ * Table + form details
+ * ================================================================== */
+
+/* The selection column is the width of its checkbox plus its padding, and it
+   must not stretch when the table is squeezed. */
+.table .col-check { width: 44px; padding-right: 0; }
+.table .col-check .checkbox { display: block; margin: 0 auto; }
+
+/* A field label, distinct from a bare <label> wrapping an input. */
+.field__label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--subtext1);
+}
+
+/* A row that is a link rather than a container of controls. */
+.table tbody tr[data-clickable="true"] { cursor: pointer; }

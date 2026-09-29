@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-accent="mauve" data-radius="soft" data-density="comfortable">
+<head>
+  <meta charset="utf-8" />
+  <!--
+    No remote origins are permitted. The UI is served from flora://app, skins
+    from the same origin, and the only outbound links are opened in the user's
+    own browser by the main process. This CSP is the enforcement of that.
+
+    `frame-ancestors` is deliberately absent: a browser ignores it when it
+    arrives in a meta element, so it is sent as a header instead (protocol.js).
+  -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline';
+    font-src 'self';
+    img-src 'self' data:;
+    connect-src 'self';
+    form-action 'none';
+    base-uri 'none';
+  " />
+  <title>flora</title>
+
+  <link rel="icon" href="assets/logo/flora-mark.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles/fonts.css" />
+  <link rel="stylesheet" href="styles/tokens.css" />
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/layout.css" />
+  <link rel="stylesheet" href="styles/components.css" />
+  <link rel="stylesheet" href="styles/onboarding.css" />
+
+  <!--
+    A classic script, not a module: it has to run before the first paint, and
+    modules are deferred. It is deliberately external rather than inline so the
+    Content-Security-Policy above can forbid inline script entirely.
+  -->
+  <script src="js/boot.js"></script>
+</head>
+<body>
+  <!--
+    `data-art` drives how much of the animated backdrop shows through:
+      full  - the dashboard, where the art is the page's own background
+      veiled- everywhere else, where the art is a glow at the top of the window
+              and the page reads on a solid surface.
+    It is on the root rather than on the stage so a route change is one
+    attribute write, and the crossfade is a CSS transition rather than a second
+    element to keep in step.
+  -->
+  <div id="app" data-art="veiled" data-scrolled="false">
+
+    <!--
+      The backdrop. Fixed, behind everything, and never interactive: the canvas
+      is painted by js/stage.js and the two layers above it are what keep text
+      over it readable.
+    -->
+    <div class="stage" aria-hidden="true">
+      <canvas class="stage__art" id="stage"></canvas>
+      <div class="stage__vignette"></div>
+      <div class="stage__veil"></div>
+    </div>
+
+    <!--
+      The navbar overlays the content rather than sitting above it, so the
+      backdrop runs unbroken to the top edge of the window. Content scrolls
+      beneath it and the bar frosts once it does (see layout.css).
+    -->
+    <header class="navbar drag" id="navbar">
+      <div class="navbar__left">
+        <a class="brand" id="brand" href="#" role="button" title="flora">
+          <!-- An inlined mark, not an <img>: the gradient is built from
+               var(--accent), which nothing outside the document can see. -->
+          <span class="illus brand__mark" data-icon="flora-mark" data-icon-art="1"></span>
+          <b class="brand__word">flora</b>
+        </a>
+      </div>
+
+      <nav class="navbar__center" id="nav" aria-label="Main"></nav>
+
+      <div class="navbar__right no-drag">
+        <button class="navbtn" id="nav-discord" type="button" title="Join the flora Discord" aria-label="Join the flora Discord">
+          <span class="icon" data-icon="discord"></span>
+        </button>
+        <button class="navbtn" id="omni" type="button" title="Search and commands  (Ctrl K)" aria-label="Search and commands">
+          <span class="icon" data-icon="search-md"></span>
+        </button>
+        <button class="navbtn" id="nav-settings" type="button" title="Settings" aria-label="Settings">
+          <span class="icon" data-icon="settings-02"></span>
+        </button>
+
+        <!-- Connection state, in the place the account chip sits in the
+             reference. The ring around it is the only always-visible signal
+             that the backend is live.
+
+             The mark is left empty because the renderer decides what goes in
+             it: the face of the first whitelisted player if there is one, and
+             flora's own mark if there is not. See `paintIdentityMark`. -->
+        <button class="statuschip" id="identity" type="button" title="Backend status">
+          <span class="statuschip__mark" id="identity-mark"></span>
+          <span class="statuschip__dot"></span>
+          <span class="sr-only" id="identity-sub">starting…</span>
+        </button>
+
+        <div class="wincontrols">
+          <button type="button" id="win-min" aria-label="Minimise" title="Minimise">
+            <span class="icon" data-icon="minus"></span>
+          </button>
+          <button type="button" id="win-max" aria-label="Maximise" title="Maximise">
+            <span class="icon" data-icon="maximize-01"></span>
+          </button>
+          <button type="button" id="win-close" aria-label="Close" title="Close">
+            <span class="icon" data-icon="x-close"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="content" role="main"></main>
+  </div>
+
+  <!--
+    A single mount point for transient UI. Modals, menus and toasts are appended
+    here rather than into the view, so a view re-render can never orphan one.
+  -->
+  <div id="overlays"></div>
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

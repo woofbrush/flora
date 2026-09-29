@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output. dist/ is what electron-builder writes; build/ holds only the
+# icons that scripts/make-icons.js generates, so a fresh clone regenerates both
+# with `npm run icons` and `npm run dist`.
+dist/
+build/
+
+# The app's own data directory, which is what a portable build creates beside
+# the .exe. It contains the database and the encryption key - never commit it.
+flora-data/
+
+# Local scratch
+*.log
+*.local
+.DS_Store
+Thumbs.db
+
+# Secrets. flora keeps nothing in the tree that needs these, and nothing that
+# needs them should ever be added.
+.env
+.env.*
+*.pem
+*.p12
+*.key
+
+# Editors
+.vscode/
+.idea/
+*.swp
