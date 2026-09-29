@@ -19,7 +19,7 @@ copy of the game. Accounts and connections are the whole of it.
 
 <img src=".github/assets/screens/01-home.png" alt="flora's home screen, showing accounts, bots and proxies at a glance">
 
-> **flora is not affiliated with Mojang Studios or Microsoft.** It is an
+> **flora is not affiliated with Mojang Studios or Microsoft!** It is an
 > independent tool. "Minecraft" is a trademark of Mojang Synergies AB. See the
 > [LICENSE](LICENSE) for the full statement.
 
