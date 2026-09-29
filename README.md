@@ -9,7 +9,7 @@ to a server through [mineflayer](https://github.com/PrismarineJS/mineflayer),
 either directly or through a pool of proxies. It is built by
 [Woofbrush Design LLC](https://woofbrush.com).
 
-flora is not a launcher. It will not download Minecraft, start it, or hand you a
+**flora is not a launcher.** It will not download Minecraft, start it, or hand you a
 copy of the game. Accounts and connections are the whole of it.
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-9333EA)](LICENSE)
